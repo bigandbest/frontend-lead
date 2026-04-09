@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 26% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 26% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 26% 14%;
+
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 26% 14%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 26% 14%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 67%;
+
+    --radius: 0.5rem;
+
+    /* Lead status colors */
+    --status-new: 217 91% 60%;
+    --status-contacted: 38 92% 50%;
+    --status-qualified: 239 84% 67%;
+    --status-negotiation: 25 95% 53%;
+    --status-converted: 160 84% 39%;
+    --status-lost: 0 72% 51%;
+    --status-invalid: 220 9% 46%;
+    --status-junk: 220 13% 46%;
+
+    /* Priority colors */
+    --priority-low: 220 9% 46%;
+    --priority-medium: 217 91% 60%;
+    --priority-high: 25 95% 53%;
+    --priority-urgent: 0 72% 51%;
+
+    /* Campaign status */
+    --campaign-draft: 220 9% 46%;
+    --campaign-active: 160 84% 39%;
+    --campaign-paused: 38 92% 50%;
+    --campaign-completed: 239 84% 67%;
+    --campaign-cancelled: 0 72% 51%;
+
+    /* Role colors */
+    --role-super-admin: 270 67% 47%;
+    --role-admin: 239 84% 67%;
+    --role-manager: 217 91% 60%;
+    --role-marketing-agent: 187 72% 50%;
+    --role-supervisor: 174 72% 40%;
+    --role-field-agent: 160 84% 39%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 239 84% 97%;
+    --sidebar-accent-foreground: 239 84% 67%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 239 84% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1 {
+    @apply text-xl sm:text-2xl font-bold tracking-tight;
+  }
+
+  h2 {
+    @apply text-lg sm:text-xl font-semibold;
+  }
+
+  h3 {
+    @apply text-base sm:text-lg font-semibold;
+  }
+
+  h4 {
+    @apply text-sm sm:text-base font-semibold;
+  }
+}
+
+@layer utilities {
+  .stat-card {
+    @apply bg-card rounded-xl border p-3 sm:p-5 transition-shadow hover:shadow-md cursor-pointer;
+  }
+
+  .page-header {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center justify-between mb-4 sm:mb-6;
+  }
+
+  .filter-bar {
+    @apply flex flex-wrap items-center gap-2 mb-4;
+  }
+
+  .content-area {
+    @apply flex-1 overflow-auto p-3 sm:p-6;
+  }
+
+  .table-scroll {
+    @apply overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0;
+  }
+}
