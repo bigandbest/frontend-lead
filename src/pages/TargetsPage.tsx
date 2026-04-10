@@ -17,6 +17,7 @@ import { Search, Plus, Loader2 } from "lucide-react";
 import { useTargets, useMyPerformance, useLeaderboard, useCreateTarget, useAssignTarget, useTargetById } from "@/hooks/useTargets";
 import { useTeams } from "@/hooks/useTeams";
 import { useUsers } from "@/hooks/useUsers";
+import { useAuthStore } from "@/stores/authStore";
 
 const TARGET_TYPE_MAP: Record<string, { icon: string; label: string }> = {
   leads_collected: { icon: "📋", label: "Leads Collected" },
@@ -89,6 +90,9 @@ export default function TargetsPage() {
   const createTarget = useCreateTarget();
   const assignTarget = useAssignTarget();
   const { data: targetDetailData, isLoading: targetDetailLoading } = useTargetById(activeTargetId ?? undefined);
+
+  const currentUser = useAuthStore((s) => s.user);
+  const isAdmin = currentUser && ["super_admin", "admin", "marketing_manager", "agent_supervisor"].includes(currentUser.role);
 
   const targets = targetsData?.data ?? [];
   const performance = performanceData?.data;
@@ -165,9 +169,11 @@ export default function TargetsPage() {
     <AppLayout>
       <div className="page-header">
         <h1>Targets & KPIs</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Create Target
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Create Target
+          </Button>
+        )}
       </div>
 
       <Tabs value={mainTab} onValueChange={setMainTab} className="mb-6">
@@ -230,7 +236,9 @@ export default function TargetsPage() {
                         <p>Assigned: {target.assignedTeamsCount ?? 0} teams · {target.assignedUsersCount ?? 0} agents</p>
                       </div>
                       <div className="flex items-center gap-2 mt-4">
-                        <Button variant="outline" size="sm" onClick={() => openAssignModal(target.id, target.name)}>Assign</Button>
+                        {isAdmin && (
+                          <Button variant="outline" size="sm" onClick={() => openAssignModal(target.id, target.name)}>Assign</Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => openTrackingModal(target.id, target.name)}>Track</Button>
                       </div>
                     </CardContent>

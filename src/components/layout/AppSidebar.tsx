@@ -20,7 +20,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
-import { ADMIN_PLUS_ROLES, MANAGER_PLUS_ROLES, hasAnyRole, type AppRole } from "@/lib/rbac";
+import { ADMIN_PLUS_ROLES, MANAGER_PLUS_ROLES, NON_FIELD_AGENT_ROLES, hasAnyRole, type AppRole } from "@/lib/rbac";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useReminders } from "@/hooks/useReminders";
 import {
@@ -53,9 +53,9 @@ const mainItems: SidebarItem[] = [
 ];
 
 const campaignItems: SidebarItem[] = [
-  { title: "Campaigns", url: "/campaigns", icon: Megaphone },
-  { title: "Templates", url: "/templates", icon: FileText },
-  { title: "Forms", url: "/forms", icon: ClipboardList },
+  { title: "Campaigns", url: "/campaigns", icon: Megaphone, allowedRoles: NON_FIELD_AGENT_ROLES },
+  { title: "Templates", url: "/templates", icon: FileText, allowedRoles: NON_FIELD_AGENT_ROLES },
+  { title: "Forms", url: "/forms", icon: ClipboardList, allowedRoles: NON_FIELD_AGENT_ROLES },
 ];
 
 const invoiceItems: SidebarItem[] = [

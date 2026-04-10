@@ -112,6 +112,7 @@ export default function UsersPage() {
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="p-3 text-left font-medium text-muted-foreground">User</th>
+              <th className="p-3 text-left font-medium text-muted-foreground">Emp. ID</th>
               <th className="p-3 text-left font-medium text-muted-foreground">Role</th>
               <th className="p-3 text-left font-medium text-muted-foreground">Team</th>
               <th className="p-3 text-left font-medium text-muted-foreground">Status</th>
@@ -123,6 +124,7 @@ export default function UsersPage() {
               Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i} className="border-b">
                   <td className="p-3"><Skeleton className="h-9 w-48" /></td>
+                  <td className="p-3"><Skeleton className="h-5 w-16" /></td>
                   <td className="p-3"><Skeleton className="h-6 w-24" /></td>
                   <td className="p-3"><Skeleton className="h-4 w-20" /></td>
                   <td className="p-3"><Skeleton className="h-6 w-16" /></td>
@@ -131,7 +133,7 @@ export default function UsersPage() {
               ))
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-muted-foreground">No users found</td>
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">No users found</td>
               </tr>
             ) : (
               users.map((user) => (
@@ -148,6 +150,11 @@ export default function UsersPage() {
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
+                  </td>
+                  <td className="p-3">
+                    <span className="font-mono text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                      {user.employeeId ?? "—"}
+                    </span>
                   </td>
                   <td className="p-3"><RoleBadge role={user.role} /></td>
                   <td className="p-3 text-muted-foreground">{user.teamName ?? "—"}</td>

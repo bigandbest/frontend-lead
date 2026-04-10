@@ -68,7 +68,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error((json as { message?: string }).message ?? res.statusText);
+    const errJson = json as { message?: string; errors?: { field: string; message: string }[] };
+    const firstFieldError = errJson.errors?.[0];
+    const message = firstFieldError
+      ? `${firstFieldError.message} (${firstFieldError.field})`
+      : (errJson.message ?? res.statusText);
+    throw new Error(message);
   }
 
   return json as T;

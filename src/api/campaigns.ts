@@ -96,6 +96,8 @@ export interface CreateCampaignPayload {
   endDate?: string;
   budget?: number;
   formId?: string;
+  assignedTeamIds?: string[];
+  assignedUserIds?: string[];
   settings?: {
     dailyLeadTarget?: number;
     maxLeadsTotal?: number;

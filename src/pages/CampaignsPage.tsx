@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCampaigns, useCreateCampaign, useUpdateCampaignStatus } from "@/hooks/useCampaigns";
+import { useTeams } from "@/hooks/useTeams";
+import { useUsers } from "@/hooks/useUsers";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const campaignTypeIcons: Record<string, { icon: React.ElementType; label: string }> = {
   field_collection: { icon: Handshake, label: "Field Collection" },
@@ -60,6 +63,8 @@ export default function CampaignsPage() {
   const [newCampaign, setNewCampaign] = useState({
     name: "", description: "", type: "field_collection", startDate: "", endDate: "", budget: "",
   });
+  const [assignedTeamIds, setAssignedTeamIds] = useState<string[]>([]);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
 
   const { data, isLoading } = useCampaigns({
     search: search || undefined,
@@ -69,9 +74,26 @@ export default function CampaignsPage() {
   });
   const createCampaign = useCreateCampaign();
   const updateStatus = useUpdateCampaignStatus();
+  const { data: teamsData } = useTeams({ limit: 200, isActive: true });
+  const { data: usersData } = useUsers({ limit: 200, isActive: true, role: undefined });
 
   const campaigns = data?.data ?? [];
   const pagination = data?.pagination;
+  const teams = teamsData?.data ?? [];
+  const agentUsers = (usersData?.data ?? []).filter((u) =>
+    ["marketing_agent", "field_agent", "agent_supervisor"].includes(u.role)
+  );
+
+  const resetCreate = () => {
+    setCreateOpen(false);
+    setStep(1);
+    setNewCampaign({ name: "", description: "", type: "field_collection", startDate: "", endDate: "", budget: "" });
+    setAssignedTeamIds([]);
+    setAssignedUserIds([]);
+  };
+
+  const toggleId = (list: string[], id: string, setter: (v: string[]) => void) =>
+    setter(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
   const handleCreate = () => {
     createCampaign.mutate(
@@ -82,14 +104,10 @@ export default function CampaignsPage() {
         startDate: newCampaign.startDate ? new Date(newCampaign.startDate).toISOString() : undefined,
         endDate: newCampaign.endDate ? new Date(newCampaign.endDate).toISOString() : undefined,
         budget: newCampaign.budget ? Number(newCampaign.budget) : undefined,
+        assignedTeamIds: assignedTeamIds.length > 0 ? assignedTeamIds : undefined,
+        assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
       },
-      {
-        onSuccess: () => {
-          setCreateOpen(false);
-          setStep(1);
-          setNewCampaign({ name: "", description: "", type: "field_collection", startDate: "", endDate: "", budget: "" });
-        },
-      }
+      { onSuccess: resetCreate }
     );
   };
 
@@ -226,17 +244,17 @@ export default function CampaignsPage() {
       )}
 
       {/* Create Campaign Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog open={createOpen} onOpenChange={resetCreate}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Campaign — Step {step} of 2</DialogTitle>
+            <DialogTitle>New Campaign — Step {step} of 3</DialogTitle>
             <DialogDescription>
-              {step === 1 ? "Basic information about your campaign" : "Dates, budget and launch"}
+              {step === 1 ? "Basic information about your campaign" : step === 2 ? "Dates, budget and launch" : "Assign teams and agents"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex gap-1">
-            {[1, 2].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div key={s} className={cn("h-1 flex-1 rounded-full", s <= step ? "bg-primary" : "bg-muted")} />
             ))}
           </div>
@@ -294,14 +312,65 @@ export default function CampaignsPage() {
             </div>
           )}
 
+          {step === 3 && (
+            <div className="space-y-4">
+              {/* Teams */}
+              <div>
+                <p className="text-sm font-medium mb-2">Assign Teams</p>
+                {teams.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No active teams</p>
+                ) : (
+                  <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                    {teams.map((t) => (
+                      <label key={t.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40">
+                        <Checkbox
+                          checked={assignedTeamIds.includes(t.id)}
+                          onCheckedChange={() => toggleId(assignedTeamIds, t.id, setAssignedTeamIds)}
+                        />
+                        <span className="text-sm">{t.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Agents */}
+              <div>
+                <p className="text-sm font-medium mb-2">Assign Agents / Supervisors</p>
+                {agentUsers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No agents available</p>
+                ) : (
+                  <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                    {agentUsers.map((u) => (
+                      <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40">
+                        <Checkbox
+                          checked={assignedUserIds.includes(u.id)}
+                          onCheckedChange={() => toggleId(assignedUserIds, u.id, setAssignedUserIds)}
+                        />
+                        <div>
+                          <p className="text-sm">{u.firstName} {u.lastName}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{u.role.replace(/_/g, " ")}{u.employeeId ? ` · ${u.employeeId}` : ""}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {(assignedTeamIds.length > 0 || assignedUserIds.length > 0) && (
+                <p className="text-xs text-muted-foreground">
+                  {assignedTeamIds.length} team(s) · {assignedUserIds.length} agent(s) selected
+                </p>
+              )}
+            </div>
+          )}
+
           <DialogFooter className="flex-row justify-between gap-2">
             <div>
               {step > 1 && <Button variant="outline" onClick={() => setStep(step - 1)}>← Back</Button>}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-              {step < 2 ? (
-                <Button onClick={() => setStep(2)} disabled={!newCampaign.name}>Next →</Button>
+              <Button variant="outline" onClick={resetCreate}>Cancel</Button>
+              {step < 3 ? (
+                <Button onClick={() => setStep(step + 1)} disabled={step === 1 && !newCampaign.name}>Next →</Button>
               ) : (
                 <Button onClick={handleCreate} disabled={createCampaign.isPending || !newCampaign.name}>
                   {createCampaign.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

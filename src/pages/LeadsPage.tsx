@@ -25,8 +25,10 @@ import { cn } from "@/lib/utils";
 import { useLeads, useLeadStats, useCreateLead, useUpdateLead, useDeleteLead, useBulkAssignLeads, useBulkUpdateLeadStatus, useExportLeads } from "@/hooks/useLeads";
 import { useUsers } from "@/hooks/useUsers";
 import { useForms, useForm } from "@/hooks/useForms";
+import { useCampaigns } from "@/hooks/useCampaigns";
 import type { FormField } from "@/api/forms";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 
 const STATUS_TABS = [
   { label: "All", value: "" },
@@ -53,6 +55,10 @@ export default function LeadsPage() {
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, unknown>>({});
   const [capturingLocationFor, setCapturingLocationFor] = useState<string | null>(null);
   const [autoCaptureDone, setAutoCaptureDone] = useState(false);
+  const [assignedToId, setAssignedToId] = useState("");
+  const [campaignId, setCampaignId] = useState("");
+  const currentUser = useAuthStore((s) => s.user);
+  const isAdmin = currentUser && ["super_admin", "admin", "marketing_manager", "agent_supervisor"].includes(currentUser.role);
 
   const hasFollowUp = activeTab === "followup" ? true : undefined;
   const statusQuery = activeTab && activeTab !== "followup" ? activeTab : statusFilter || undefined;
@@ -68,6 +74,7 @@ export default function LeadsPage() {
   const { data: statsData } = useLeadStats();
   const { data: usersData } = useUsers({ limit: 100, isActive: true });
   const { data: formsData } = useForms({ status: "published", limit: 100 });
+  const { data: campaignsData } = useCampaigns({ status: "active", limit: 100 });
   const { data: selectedFormDetail, isLoading: selectedFormLoading } = useForm(selectedFormId);
 
   const createLead = useCreateLead();
@@ -85,6 +92,7 @@ export default function LeadsPage() {
     () => (formsData?.data ?? []).filter((f) => f.isPublished && f.isActive),
     [formsData]
   );
+  const activeCampaigns = campaignsData?.data ?? [];
   const dynamicFields: FormField[] = useMemo(
     () => ((selectedFormDetail?.data?.fields ?? []) as FormField[]).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [selectedFormDetail]
@@ -276,6 +284,8 @@ export default function LeadsPage() {
         latitude: topLat,
         longitude: topLng,
         address: topAddress,
+        assignedToId: assignedToId || undefined,
+        campaignId: campaignId || undefined,
       },
       {
         onSuccess: () => {
@@ -283,6 +293,8 @@ export default function LeadsPage() {
           setSelectedFormId("");
           setDynamicFormData({});
           setAutoCaptureDone(false);
+          setAssignedToId("");
+          setCampaignId("");
         },
       }
     );
@@ -569,6 +581,7 @@ export default function LeadsPage() {
                 <th className="p-3 text-left font-medium text-muted-foreground">Priority</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">Source</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">Assigned To</th>
+                <th className="p-3 text-left font-medium text-muted-foreground">Created By</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">City</th>
                 <th className="p-3 text-left font-medium text-muted-foreground">Created</th>
                 <th className="p-3 w-10"></th>
@@ -578,13 +591,13 @@ export default function LeadsPage() {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b">
-                    {Array.from({ length: 9 }).map((_, j) => (
+                    {Array.from({ length: 10 }).map((_, j) => (
                       <td key={j} className="p-3"><Skeleton className="h-5 w-full" /></td>
                     ))}
                   </tr>
                 ))
               ) : leads.length === 0 ? (
-                <tr><td colSpan={9} className="p-10 text-center text-muted-foreground">No leads found</td></tr>
+                <tr><td colSpan={10} className="p-10 text-center text-muted-foreground">No leads found</td></tr>
               ) : (
                 leads.map((lead) => (
                   <tr
@@ -615,6 +628,14 @@ export default function LeadsPage() {
                           <span className="text-sm">{lead.assignedToName}</span>
                         </div>
                       ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="p-3">
+                      <div>
+                        <p className="text-sm">{lead.createdByName ?? "—"}</p>
+                        {lead.createdByEmployeeId && (
+                          <p className="text-xs font-mono text-primary">{lead.createdByEmployeeId}</p>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3 text-muted-foreground">{lead.city ?? "—"}</td>
                     <td className="p-3 text-muted-foreground text-xs">
@@ -703,6 +724,41 @@ export default function LeadsPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {isAdmin && (
+              <div className="space-y-1.5">
+                <Label>Assign To (optional)</Label>
+                <Select value={assignedToId || "unassigned"} onValueChange={(v) => setAssignedToId(v === "unassigned" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {users
+                      .filter((u) => ["marketing_agent", "field_agent", "agent_supervisor"].includes(u.role))
+                      .map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.firstName} {u.lastName}
+                          {u.employeeId && <span className="text-muted-foreground ml-1 text-xs">({u.employeeId})</span>}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {activeCampaigns.length > 0 && (
+              <div className="space-y-1.5">
+                <Label>Campaign (optional)</Label>
+                <Select value={campaignId || "none"} onValueChange={(v) => setCampaignId(v === "none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="No campaign" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No campaign</SelectItem>
+                    {activeCampaigns.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {selectedFormId && (
               <div className="space-y-3 border rounded-md p-3">

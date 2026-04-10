@@ -100,7 +100,7 @@ export default function InvoiceDetailPage() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="p-6 max-w-4xl mx-auto space-y-4">
+        <div className="p-3 sm:p-6 max-w-4xl mx-auto space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-[600px] rounded-xl" />
         </div>
@@ -129,21 +129,23 @@ export default function InvoiceDetailPage() {
     <AppLayout>
       <style>{PRINT_STYLES}</style>
 
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="p-3 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header bar */}
-        <div className="flex items-center justify-between no-print">
+        <div className="flex flex-col gap-3 no-print">
+          {/* Top row: back + title */}
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate("/invoices")}>
               <ChevronLeft className="h-4 w-4 mr-1" /> Invoices
             </Button>
             <div>
-              <h1 className="font-bold text-xl font-mono">{invoice.invoiceNumber}</h1>
-              <p className="text-muted-foreground text-sm">
+              <h1 className="font-bold text-lg sm:text-xl font-mono">{invoice.invoiceNumber}</h1>
+              <p className="text-muted-foreground text-xs sm:text-sm">
                 Created by {invoice.createdByName} · {formatDate(invoice.createdAt)}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Actions row */}
+          <div className="flex flex-wrap items-center gap-2">
             {canChangeStatus && (
               <Select value={invoice.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="h-8 w-36 text-sm">
@@ -160,12 +162,14 @@ export default function InvoiceDetailPage() {
               variant={viewMode === "thermal" ? "secondary" : "outline"}
               size="sm"
               onClick={() => setViewMode((m) => (m === "thermal" ? "standard" : "thermal"))}
+              title={viewMode === "thermal" ? "Switch to Standard View" : "Switch to Thermal Receipt"}
             >
-              <Receipt className="h-4 w-4 mr-1.5" />
-              {viewMode === "thermal" ? "Standard View" : "Thermal Receipt"}
+              <Receipt className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">{viewMode === "thermal" ? "Thermal Receipt" : "Standard View"}</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-1.5" /> Print / PDF
+              <Printer className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Print / PDF</span>
             </Button>
           </div>
         </div>
@@ -180,11 +184,11 @@ export default function InvoiceDetailPage() {
           ) : (
           <div className="border rounded-2xl overflow-hidden bg-white shadow-sm">
             {/* Invoice Top */}
-            <div className="p-8 pb-6">
-              <div className="flex items-start justify-between gap-4">
+            <div className="p-4 sm:p-8 pb-4 sm:pb-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 {/* Company info */}
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">BIG & BEST MART (OPC) PVT LTD</h2>
+                  <h2 className="text-lg sm:text-2xl font-bold text-foreground">BIG & BEST MART (OPC) PVT LTD</h2>
                   <p className="text-muted-foreground text-xs mt-1">
                     37/1, Central Road, K B Sarani, Uttapara, Madhyamgram, North 24 Parganas, Barasat - II, West Bengal, India, 700129
                   </p>
@@ -273,8 +277,9 @@ export default function InvoiceDetailPage() {
             </div>
 
             {/* Line Items Table */}
-            <div className="px-8 pb-6">
-              <table className="w-full text-sm">
+            <div className="px-4 sm:px-8 pb-4 sm:pb-6">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full text-sm min-w-[500px] px-4 sm:px-0">
                 <thead>
                   <tr className="border-b-2 border-foreground/20">
                     <th className="text-left py-2 pr-4 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Description</th>
@@ -304,10 +309,11 @@ export default function InvoiceDetailPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
 
               {/* Totals */}
               <div className="flex justify-end mt-4">
-                <div className="w-60 space-y-2 text-sm">
+                <div className="w-full sm:w-64 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
@@ -341,7 +347,7 @@ export default function InvoiceDetailPage() {
 
             {/* Notes */}
             {invoice.notes && (
-              <div className="px-8 pb-6">
+              <div className="px-4 sm:px-8 pb-4 sm:pb-6">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                   Notes
                 </p>
@@ -352,11 +358,44 @@ export default function InvoiceDetailPage() {
           )}
         </div>
 
+        {/* ── Location Card (no-print) ── */}
+        {invoice.locationAddress && (
+          <Card className="no-print">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="font-semibold text-sm">Invoice Location</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-2 text-sm bg-muted/40 border rounded-lg px-3 py-2 flex-1">
+                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="font-medium">{invoice.locationAddress}</p>
+                    {invoice.latitude != null && invoice.longitude != null && (
+                      <p className="text-xs text-muted-foreground font-mono">{invoice.latitude.toFixed(5)}, {invoice.longitude.toFixed(5)}</p>
+                    )}
+                  </div>
+                </div>
+                {invoice.latitude != null && invoice.longitude != null && (
+                  <a
+                    href={`https://www.google.com/maps?q=${invoice.latitude},${invoice.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline shrink-0"
+                  >
+                    View on Maps
+                  </a>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ── Customer Profile Card (no-print) ── */}
         {customer && (
           <Card className="no-print">
-            <CardContent className="p-5 space-y-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-4 sm:p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span className="font-semibold">Customer Profile</span>
@@ -365,7 +404,8 @@ export default function InvoiceDetailPage() {
                   variant="outline" size="sm"
                   onClick={() => navigate(`/invoices/customers/${customer.id}`)}
                 >
-                  View Full Profile
+                  <span className="hidden sm:inline">View Full Profile</span>
+                  <span className="sm:hidden">Profile</span>
                 </Button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">

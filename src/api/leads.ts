@@ -25,6 +25,7 @@ export interface Lead {
   assignedToName?: string;
   createdById?: string;
   createdByName?: string;
+  createdByEmployeeId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,6 +85,7 @@ export interface CreateLeadPayload {
   assignedToId?: string;
   formId?: string;
   formData?: Record<string, unknown>;
+  campaignId?: string;
 }
 
 export interface UpdateLeadPayload {

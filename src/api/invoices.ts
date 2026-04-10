@@ -53,6 +53,7 @@ export interface Invoice {
   templateName: string;
   createdAt: string;
   updatedAt: string;
+  locationAddress: string | null;
 }
 
 export interface InvoiceDetail extends Invoice {
@@ -63,6 +64,9 @@ export interface InvoiceDetail extends Invoice {
   notes: string | null;
   paidAt: string | null;
   leadId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  locationAddress: string | null;
 }
 
 export interface InvoiceStats {
@@ -136,6 +140,9 @@ export interface CreateInvoicePayload {
   notes?: string;
   formData?: Record<string, unknown>;
   leadId?: string;
+  latitude: number;
+  longitude: number;
+  locationAddress: string;
 }
 
 export interface UpdateInvoicePayload {

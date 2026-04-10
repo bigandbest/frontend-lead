@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Trash2, ChevronLeft, Calculator } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, MapPin, Loader2 as Spinner } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +111,8 @@ export default function InvoiceFillPage() {
   const [globalDiscount, setGlobalDiscount] = useState(0);
   const [notes, setNotes] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [location, setLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "error">("idle");
 
   const { data: templatesData } = useInvoiceTemplates({ isActive: true });
   const { data: templateDetail, isLoading: templateLoading } = useInvoiceTemplate(selectedTemplateId);
@@ -159,10 +161,47 @@ export default function InvoiceFillPage() {
 
   // ─── Submit ──────────────────────────────────────────────────────────────────
 
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("error");
+      return;
+    }
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await res.json();
+          const a = data.address ?? {};
+          const parts = [
+            a.neighbourhood || a.suburb || a.village || a.town,
+            a.city || a.county || a.district,
+            a.state,
+          ].filter(Boolean);
+          const address = parts.length > 0 ? parts.join(", ") : data.display_name?.split(",").slice(0, 3).join(", ") ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          setLocation({ lat, lng, address });
+        } catch {
+          setLocation({ lat, lng, address: `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
+        }
+        setLocationStatus("idle");
+      },
+      () => setLocationStatus("error"),
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedTemplateId) return;
+    if (!location) {
+      setLocationStatus("error");
+      return;
+    }
 
     // Build customer object from customer fields
     const fieldMap = (template?.fields ?? []).reduce<Record<string, InvoiceTemplateField>>((m, f) => {
@@ -209,6 +248,9 @@ export default function InvoiceFillPage() {
       notes: notes || undefined,
       dueDate: dueDate || undefined,
       formData: fieldValues,
+      latitude: location!.lat,
+      longitude: location!.lng,
+      locationAddress: location!.address,
     });
 
     navigate(`/invoices/${res.data.id}`);
@@ -516,10 +558,59 @@ export default function InvoiceFillPage() {
                     </Card>
                   )}
 
+                  {/* Location */}
+                  <Card className={locationStatus === "error" && !location ? "border-destructive" : ""}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {otherFields.length > 0 ? "5." : "4."} Location <span className="text-destructive">*</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {location ? (
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 flex-1">
+                            <MapPin className="h-4 w-4 shrink-0" />
+                            <div>
+                              <p className="font-medium">{location.address}</p>
+                              <p className="text-xs text-green-600/70 font-mono">{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</p>
+                            </div>
+                          </div>
+                          <Button type="button" size="sm" variant="outline" onClick={captureLocation}>
+                            Recapture
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={captureLocation}
+                            disabled={locationStatus === "loading"}
+                            className={locationStatus === "error" ? "border-destructive text-destructive" : ""}
+                          >
+                            {locationStatus === "loading" ? (
+                              <><Spinner className="h-4 w-4 mr-2 animate-spin" />Getting location…</>
+                            ) : (
+                              <><MapPin className="h-4 w-4 mr-2" />Capture Current Location</>
+                            )}
+                          </Button>
+                          {locationStatus === "error" && (
+                            <p className="text-xs text-destructive">
+                              {location === null
+                                ? "Location is required to create an invoice. Please allow location access."
+                                : "Could not get location. Please try again or check browser permissions."}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   {/* Notes & Due Date */}
                   <Card>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base">5. Notes & Payment</CardTitle>
+                      <CardTitle className="text-base">{otherFields.length > 0 ? "6." : "5."} Notes & Payment</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
@@ -559,7 +650,7 @@ export default function InvoiceFillPage() {
                         <p className="text-xs text-muted-foreground">Invoice Total</p>
                         <p className="font-bold text-lg">{formatCurrency(total, currency)}</p>
                       </div>
-                      <Button type="submit" disabled={createInvoice.isPending} size="lg">
+                      <Button type="submit" disabled={createInvoice.isPending || !location} size="lg" title={!location ? "Capture location first" : undefined}>
                         {createInvoice.isPending ? "Creating…" : "Create Invoice"}
                       </Button>
                     </div>

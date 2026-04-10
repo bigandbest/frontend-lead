@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/apiClient";
 
 export interface User {
   id: string;
+  employeeId?: string | null;
   firstName: string;
   lastName: string;
   email: string;

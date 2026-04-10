@@ -32,3 +32,11 @@ export const MANAGER_PLUS_ROLES: AppRole[] = [
 ];
 
 export const ADMIN_PLUS_ROLES: AppRole[] = ["admin", "super_admin"];
+
+export const NON_FIELD_AGENT_ROLES: AppRole[] = [
+  "super_admin",
+  "admin",
+  "marketing_manager",
+  "agent_supervisor",
+  "marketing_agent",
+];

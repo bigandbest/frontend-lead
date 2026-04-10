@@ -31,7 +31,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceFillPage from "./pages/InvoiceFillPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import InvoiceProductsPage from "./pages/InvoiceProductsPage";
-import { ADMIN_PLUS_ROLES, MANAGER_PLUS_ROLES } from "@/lib/rbac";
+import { ADMIN_PLUS_ROLES, MANAGER_PLUS_ROLES, NON_FIELD_AGENT_ROLES } from "@/lib/rbac";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,9 +60,9 @@ const App = () => (
             <Route path="/teams" element={<ProtectedRoute allowedRoles={ADMIN_PLUS_ROLES}><TeamsPage /></ProtectedRoute>} />
             <Route path="/teams/:id" element={<ProtectedRoute allowedRoles={ADMIN_PLUS_ROLES}><TeamDetailPage /></ProtectedRoute>} />
             <Route path="/organization" element={<ProtectedRoute allowedRoles={ADMIN_PLUS_ROLES}><OrganizationPage /></ProtectedRoute>} />
-            <Route path="/campaigns" element={<CampaignsPage />} />
-            <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
-            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/campaigns" element={<ProtectedRoute allowedRoles={NON_FIELD_AGENT_ROLES}><CampaignsPage /></ProtectedRoute>} />
+            <Route path="/campaigns/:id" element={<ProtectedRoute allowedRoles={NON_FIELD_AGENT_ROLES}><CampaignDetailPage /></ProtectedRoute>} />
+            <Route path="/templates" element={<ProtectedRoute allowedRoles={NON_FIELD_AGENT_ROLES}><TemplatesPage /></ProtectedRoute>} />
             <Route path="/reminders" element={<RemindersPage />} />
             <Route path="/attendance" element={<AttendancePage />} />
             <Route path="/forms" element={<FormsPage />} />
