@@ -324,12 +324,10 @@ export function ThermalReceiptView({ invoice, templateSettings }: Props) {
       <div style={{ textAlign: "center", fontWeight: "bold", marginTop: "4px" }}>
         THANK YOU FOR YOUR BUSINESS!
       </div>
-      {website && (
-        <div style={{ textAlign: "center", fontSize: "11px" }}>
-          For more details, visit our website
-        </div>
-      )}
-      {website && (
+      <div style={{ textAlign: "center", fontSize: "11px", marginTop: "2px" }}>
+        www.bigbestmart.com
+      </div>
+      {website && website.indexOf('bigbestmart') === -1 && (
         <div style={{ textAlign: "center", fontSize: "11px" }}>{website}</div>
       )}
 

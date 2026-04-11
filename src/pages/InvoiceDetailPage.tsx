@@ -354,6 +354,12 @@ export default function InvoiceDetailPage() {
                 <p className="text-sm text-muted-foreground border rounded p-3 bg-muted/30">{invoice.notes}</p>
               </div>
             )}
+
+            {/* Footer */}
+            <div className="px-4 sm:px-8 pb-8 text-center mt-4 border-t pt-8 mx-4 sm:mx-8">
+              <p className="font-bold text-foreground">Thank You for your business!</p>
+              <p className="text-sm text-muted-foreground mt-1">www.bigbestmart.com</p>
+            </div>
           </div>
           )}
         </div>

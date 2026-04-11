@@ -386,144 +386,186 @@ export default function InvoiceFillPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {/* Header row */}
-                      <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground font-medium px-1">
+                      <div className="hidden md:grid grid-cols-12 gap-2 text-xs text-muted-foreground font-medium px-1 mb-2">
                         <span className="col-span-3">Saved Product</span>
                         <span className="col-span-3">Description</span>
                         <span className="col-span-1 text-center">HSN</span>
                         <span className="col-span-1 text-center">Qty</span>
-                        <span className="col-span-1 text-center">Unit Price</span>
+                        <span className="col-span-1 text-center">Price</span>
                         <span className="col-span-1 text-center">Disc%</span>
                         <span className="col-span-1 text-center">Tax%</span>
                         <span className="col-span-2 text-right">Amount</span>
                       </div>
-                      {lineItems.map((li) => (
-                        <div key={li.id} className="grid grid-cols-12 gap-2 items-center">
-                          <Select
-                            value={li.productId || "manual"}
-                            onValueChange={(value) => applyCatalogProductToRow(li.id, value)}
-                          >
-                            <SelectTrigger className="col-span-3 h-8 text-xs">
-                              <SelectValue placeholder="Select product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="manual">Manual entry</SelectItem>
-                              {productCatalog.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                    {product.name} ({product.hsnCode}) · {(product.taxRatePct ?? 0).toFixed(2)}%
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <Input
-                            className="col-span-3 h-8 text-sm"
-                            placeholder="Description"
-                            value={li.description}
-                            required
-                            onChange={(e) =>
-                              setLineItems((prev) =>
-                                prev.map((x) => (x.id === li.id ? { ...x, description: e.target.value } : x))
-                              )
-                            }
-                          />
-                          <Input
-                            className="col-span-1 h-8 text-sm text-center"
-                            placeholder="HSN"
-                            value={li.hsn}
-                            onChange={(e) =>
-                              setLineItems((prev) =>
-                                prev.map((x) => (x.id === li.id ? { ...x, hsn: e.target.value } : x))
-                              )
-                            }
-                          />
-                          <Input
-                            type="number" min={0.01} step={0.01}
-                            className="col-span-1 h-8 text-sm text-center"
-                            value={li.quantity}
-                            onChange={(e) =>
-                              setLineItems((prev) =>
-                                prev.map((x) => (x.id === li.id ? { ...x, quantity: Number(e.target.value) } : x))
-                              )
-                            }
-                          />
-                          <Input
-                            type="number" min={0} step={0.01}
-                            className="col-span-1 h-8 text-sm text-center"
-                            value={li.unitPrice}
-                            onChange={(e) =>
-                              setLineItems((prev) =>
-                                prev.map((x) => (x.id === li.id ? { ...x, unitPrice: Number(e.target.value) } : x))
-                              )
-                            }
-                          />
-                          <Input
-                            type="number" min={0} max={100}
-                            className="col-span-1 h-8 text-sm text-center"
-                            value={li.discountPct}
-                            onChange={(e) =>
-                              setLineItems((prev) =>
-                                prev.map((x) => (x.id === li.id ? { ...x, discountPct: Number(e.target.value) } : x))
-                              )
-                            }
-                          />
-                          <Input
-                            type="number" min={0} max={100}
-                            className="col-span-1 h-8 text-sm text-center"
-                            value={li.taxRatePct}
-                            onChange={(e) =>
-                              setLineItems((prev) =>
-                                prev.map((x) => (x.id === li.id ? { ...x, taxRatePct: Number(e.target.value) } : x))
-                              )
-                            }
-                          />
-                          <div className="col-span-2 flex items-center justify-end gap-1">
-                            <span className="text-sm font-medium">{formatCurrency(calcLineAmount(li), currency)}</span>
+                      <div className="space-y-4 md:space-y-2">
+                      {lineItems.map((li, index) => (
+                        <div key={li.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-2 items-start md:items-center border md:border-transparent rounded-lg p-3 md:p-0 bg-muted/10 md:bg-transparent relative transition-colors">
+                          {/* Mobile row header */}
+                          <div className="md:hidden flex justify-between items-center w-full mb-1">
+                            <span className="font-semibold text-sm">Item #{index + 1}</span>
                             {lineItems.length > 1 && (
                               <Button
                                 type="button" size="sm" variant="ghost"
-                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                onClick={() => setLineItems((prev) => prev.filter((x) => x.id !== li.id))}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="col-span-1 md:col-span-3">
+                            <Label className="md:hidden text-xs text-muted-foreground mb-1 block">Saved Product</Label>
+                            <Select
+                              value={li.productId || "manual"}
+                              onValueChange={(value) => applyCatalogProductToRow(li.id, value)}
+                            >
+                              <SelectTrigger className="h-9 md:h-8 text-sm md:text-xs">
+                                <SelectValue placeholder="Select product" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="manual">Manual entry</SelectItem>
+                                {productCatalog.map((product) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                      {product.name} ({product.hsnCode}) · {(product.taxRatePct ?? 0).toFixed(2)}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="col-span-1 md:col-span-3">
+                            <Label className="md:hidden text-xs text-muted-foreground mb-1 block">Description</Label>
+                            <Input
+                              className="h-9 md:h-8 text-sm"
+                              placeholder="Description"
+                              value={li.description}
+                              required
+                              onChange={(e) =>
+                                setLineItems((prev) =>
+                                  prev.map((x) => (x.id === li.id ? { ...x, description: e.target.value } : x))
+                                )
+                              }
+                            />
+                          </div>
+                          
+                          <div className="col-span-1 md:col-span-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+                            <div>
+                              <Label className="md:hidden text-xs text-muted-foreground mb-1 block">HSN</Label>
+                              <Input
+                                className="h-9 md:h-8 text-sm md:text-center"
+                                placeholder="HSN"
+                                value={li.hsn}
+                                onChange={(e) =>
+                                  setLineItems((prev) =>
+                                    prev.map((x) => (x.id === li.id ? { ...x, hsn: e.target.value } : x))
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="md:hidden text-xs text-muted-foreground mb-1 block">Qty</Label>
+                              <Input
+                                type="number" min={0.01} step={0.01}
+                                className="h-9 md:h-8 text-sm md:text-center"
+                                value={li.quantity}
+                                onChange={(e) =>
+                                  setLineItems((prev) =>
+                                    prev.map((x) => (x.id === li.id ? { ...x, quantity: Number(e.target.value) } : x))
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="md:hidden text-xs text-muted-foreground mb-1 block">Price</Label>
+                              <Input
+                                type="number" min={0} step={0.01}
+                                className="h-9 md:h-8 text-sm md:text-center"
+                                value={li.unitPrice}
+                                onChange={(e) =>
+                                  setLineItems((prev) =>
+                                    prev.map((x) => (x.id === li.id ? { ...x, unitPrice: Number(e.target.value) } : x))
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="md:hidden text-xs text-muted-foreground mb-1 block">Disc %</Label>
+                              <Input
+                                type="number" min={0} max={100}
+                                className="h-9 md:h-8 text-sm md:text-center"
+                                value={li.discountPct}
+                                onChange={(e) =>
+                                  setLineItems((prev) =>
+                                    prev.map((x) => (x.id === li.id ? { ...x, discountPct: Number(e.target.value) } : x))
+                                  )
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="md:hidden text-xs text-muted-foreground mb-1 block">Tax %</Label>
+                              <Input
+                                type="number" min={0} max={100}
+                                className="h-9 md:h-8 text-sm md:text-center"
+                                value={li.taxRatePct}
+                                onChange={(e) =>
+                                  setLineItems((prev) =>
+                                    prev.map((x) => (x.id === li.id ? { ...x, taxRatePct: Number(e.target.value) } : x))
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="col-span-1 md:col-span-2 flex items-center justify-between md:justify-end gap-2 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-0 border-border/50">
+                            <span className="md:hidden text-sm font-medium text-muted-foreground">Amount</span>
+                            <span className="text-sm font-semibold">{formatCurrency(calcLineAmount(li), currency)}</span>
+                            {lineItems.length > 1 && (
+                              <Button
+                                type="button" size="sm" variant="ghost"
+                                className="hidden md:flex h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
                                 onClick={() =>
                                   setLineItems((prev) => prev.filter((x) => x.id !== li.id))
                                 }
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             )}
                           </div>
                         </div>
                       ))}
+                      </div>
 
                       {/* Totals */}
                       <Separator className="my-3" />
                       <div className="flex justify-end">
-                        <div className="w-64 space-y-2 text-sm">
-                          <div className="flex justify-between">
+                        <div className="w-full md:w-72 space-y-3 md:space-y-2 text-sm bg-muted/5 md:bg-transparent p-4 md:p-0 rounded-lg">
+                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Subtotal</span>
                             <span>{formatCurrency(subtotal, currency)}</span>
                           </div>
                           {discountFromLines > 0 && (
-                            <div className="flex justify-between text-red-600">
+                            <div className="flex justify-between items-center text-red-600">
                               <span>Line discounts</span>
                               <span>-{formatCurrency(discountFromLines, currency)}</span>
                             </div>
                           )}
                           {settings.discountEnabled && (
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-muted-foreground">Extra discount</span>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-muted-foreground whitespace-nowrap">Extra discount</span>
                               <Input
                                 type="number" min={0} step={0.01}
                                 value={globalDiscount}
                                 onChange={(e) => setGlobalDiscount(Number(e.target.value))}
-                                className="h-7 w-24 text-right text-sm"
+                                className="h-8 max-w-[120px] text-right text-sm"
                               />
                             </div>
                           )}
-                          <div className="flex justify-between">
+                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Tax</span>
                             <span>{formatCurrency(taxAmount, currency)}</span>
                           </div>
-                          <Separator />
-                          <div className="flex justify-between font-bold text-base">
+                          <Separator className="my-2" />
+                          <div className="flex justify-between items-center font-bold text-base md:text-lg">
                             <span>Total</span>
                             <span>{formatCurrency(total, currency)}</span>
                           </div>
@@ -641,16 +683,16 @@ export default function InvoiceFillPage() {
                   </Card>
 
                   {/* Submit */}
-                  <div className="flex items-center justify-between pt-2">
-                    <Button type="button" variant="outline" onClick={() => navigate("/invoices")}>
+                  <div className="flex flex-col-reverse md:flex-row items-center justify-between pt-4 gap-4 md:gap-0 pb-8 md:pb-0">
+                    <Button type="button" variant="outline" onClick={() => navigate("/invoices")} className="w-full md:w-auto">
                       Cancel
                     </Button>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Invoice Total</p>
+                    <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto bg-card md:bg-transparent p-4 md:p-0 border-t md:border-t-0 -mx-6 px-6 md:mx-0 md:px-0 fixed bottom-0 left-0 right-0 md:static z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
+                      <div className="text-left md:text-right">
+                        <p className="text-xs text-muted-foreground hidden md:block">Invoice Total</p>
                         <p className="font-bold text-lg">{formatCurrency(total, currency)}</p>
                       </div>
-                      <Button type="submit" disabled={createInvoice.isPending || !location} size="lg" title={!location ? "Capture location first" : undefined}>
+                      <Button type="submit" disabled={createInvoice.isPending || !location} size="lg" title={!location ? "Capture location first" : undefined} className="flex-1 md:flex-none">
                         {createInvoice.isPending ? "Creating…" : "Create Invoice"}
                       </Button>
                     </div>
