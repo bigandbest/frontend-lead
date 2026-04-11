@@ -159,6 +159,7 @@ export interface GetInvoicesParams {
   status?: InvoiceStatus;
   customerId?: string;
   templateId?: string;
+  createdById?: string;
   dateFrom?: string;
   dateTo?: string;
   sortBy?: string;
@@ -261,7 +262,7 @@ export async function getAllInvoicesForExportApi(params: GetInvoicesParams = {})
   // Set a high limit to fetch all invoices
   const exportParams = { ...params, limit: 10000 };
   Object.entries(exportParams).forEach(([k, v]) => v !== undefined && q.set(k, String(v)));
-  const response = await apiRequest(`/invoices?${q}`);
+  const response = await apiRequest<{ success: boolean; data: Invoice[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(`/invoices?${q}`);
   return {
     success: response.success,
     data: response.data,

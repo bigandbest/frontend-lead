@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus, Search, Receipt, TrendingUp, DollarSign, Clock, CheckCircle2, XCircle,
-  Filter, Download, MapPin,
+  Plus, Search, Receipt, TrendingUp, Clock, CheckCircle2,
+  Filter, Download, MapPin, Users,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -19,6 +19,8 @@ import {
 import { useInvoices, useInvoiceStats, useExportInvoices } from "@/hooks/useInvoices";
 import type { InvoiceStatus } from "@/api/invoices";
 import { useAuthStore } from "@/stores/authStore";
+import { useQuery } from "@tanstack/react-query";
+import { getUsersApi } from "@/api/users";
 
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft:     { label: "Draft",     variant: "secondary" },
@@ -37,17 +39,30 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+const ADMIN_ROLES = ["super_admin", "admin", "marketing_manager", "agent_supervisor"];
+
 export default function InvoicesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const currentUser = useAuthStore((s) => s.user);
-  const isAdmin = currentUser && ["super_admin", "admin", "marketing_manager", "agent_supervisor"].includes(currentUser.role);
+  const isAdmin = currentUser && ADMIN_ROLES.includes(currentUser.role);
+
+  // Fetch users list for admin agent filter
+  const { data: usersData } = useQuery({
+    queryKey: ["users", "invoice-filter"],
+    queryFn: () => getUsersApi({ limit: 200, isActive: true }),
+    enabled: !!isAdmin,
+  });
+  const agentList = usersData?.data ?? [];
 
   const { data, isLoading } = useInvoices({
     search: search || undefined,
     status: statusFilter !== "all" ? statusFilter as InvoiceStatus : undefined,
+    // Admin can filter by a specific agent; non-admin sees only their own (handled by backend via JWT)
+    ...(isAdmin && agentFilter !== "all" ? { createdById: agentFilter } : {}),
     page,
     limit: 20,
   });
@@ -63,6 +78,7 @@ export default function InvoicesPage() {
     exportInvoices.mutate({
       search: search || undefined,
       status: statusFilter !== "all" ? statusFilter as InvoiceStatus : undefined,
+      ...(isAdmin && agentFilter !== "all" ? { createdById: agentFilter } : {}),
     });
   };
 
@@ -73,7 +89,11 @@ export default function InvoicesPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Invoices</h1>
-            <p className="text-muted-foreground text-sm mt-1 hidden sm:block">Create and manage customer invoices</p>
+            <p className="text-muted-foreground text-sm mt-1 hidden sm:block">
+              {isAdmin
+                ? "Viewing all invoices across all agents"
+                : "Viewing your own invoices"}
+            </p>
           </div>
           <div className="flex gap-2 shrink-0">
             <Button
@@ -126,7 +146,7 @@ export default function InvoicesPage() {
         )}
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 flex-wrap">
           <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -148,6 +168,23 @@ export default function InvoicesPage() {
               ))}
             </SelectContent>
           </Select>
+          {/* Admin-only: filter by agent */}
+          {isAdmin && (
+            <Select value={agentFilter} onValueChange={(v) => { setAgentFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-full sm:w-44 h-9">
+                <Users className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                <SelectValue placeholder="All agents" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All agents</SelectItem>
+                {agentList.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Table */}
@@ -161,6 +198,7 @@ export default function InvoicesPage() {
                 <TableHead className="hidden md:table-cell">Template</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
                 {isAdmin && <TableHead className="hidden lg:table-cell">Location</TableHead>}
+                {isAdmin && <TableHead className="hidden lg:table-cell">Agent</TableHead>}
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
@@ -169,14 +207,14 @@ export default function InvoicesPage() {
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: isAdmin ? 7 : 6 }).map((_, j) => (
+                    {Array.from({ length: isAdmin ? 8 : 6 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : invoices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={isAdmin ? 8 : 6} className="text-center py-16 text-muted-foreground">
                     <Receipt className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     No invoices found
                   </TableCell>
@@ -216,6 +254,11 @@ export default function InvoicesPage() {
                           ) : (
                             <span className="text-muted-foreground/40">—</span>
                           )}
+                        </TableCell>
+                      )}
+                      {isAdmin && (
+                        <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                          {inv.createdByName ?? "—"}
                         </TableCell>
                       )}
                       <TableCell>
